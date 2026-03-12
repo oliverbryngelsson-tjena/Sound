@@ -82,16 +82,11 @@
       gap: 1.2rem;
     }
 
-    .title {
-      font-family: 'Black Han Sans', sans-serif;
-      font-size: clamp(4rem, 16vw, 12rem);
-      line-height: 0.9;
-      letter-spacing: -2px;
-      color: var(--yellow);
-      text-shadow:
-        6px 6px 0 var(--red),
-        12px 12px 0 #000;
+    .kid-gif {
+      width: clamp(200px, 60vw, 600px);
+      height: auto;
       animation: shake 0.08s linear infinite;
+      filter: drop-shadow(0 0 30px var(--red));
     }
 
     @keyframes shake {
@@ -236,7 +231,7 @@
 
   <div class="container">
     <div class="fire-row">🔥🔥🔥</div>
-    <h1 class="title">TURN<br>DOWN<br>FOR<br>WHAT</h1>
+    <img src="kid.gif" alt="" class="kid-gif" />
     <div class="subtitle">⚡ NOW PLAYING ⚡</div>
     <div class="fire-row">🔥🔥🔥</div>
     <button class="mute-btn" onclick="toggleMute()" id="muteBtn">🔊 MUTE</button>
