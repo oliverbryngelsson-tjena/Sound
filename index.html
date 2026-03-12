@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Turn Down For What</title>
   <style>
@@ -14,47 +14,83 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      position: relative;
     }
 
-    img {
-      width: clamp(200px, 60vw, 600px);
-      height: auto;
-      animation: shake 0.08s linear infinite;
+    /* The main circle button */
+    #main-circle {
+      width: 80vmin;
+      height: 80vmin;
+      border-radius: 50%;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      z-index: 10;
+      animation: pulse 1.8s ease-in-out infinite;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    @keyframes shake {
-      0%   { transform: translate(0, 0) rotate(0deg); }
-      20%  { transform: translate(-3px, 3px) rotate(-0.5deg); }
-      40%  { transform: translate(3px, -3px) rotate(0.5deg); }
-      60%  { transform: translate(-2px, 4px) rotate(-0.3deg); }
-      80%  { transform: translate(4px, -2px) rotate(0.3deg); }
-      100% { transform: translate(0, 0) rotate(0deg); }
-    }
-
-    #unblock {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 999;
-    }
-    #unblock.visible { display: block; }
-    #unblock button {
+    #main-circle img {
       width: 100%;
       height: 100%;
-      background: transparent;
-      border: none;
-      cursor: pointer;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
+      50%  { transform: scale(1.05); box-shadow: 0 0 60px 20px rgba(255,255,255,0.15); }
+      100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
+    }
+
+    /* Chaos GIF clones */
+    .clone {
+      position: fixed;
+      border-radius: 50%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 5;
+      will-change: transform, opacity;
+    }
+    .clone img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Screen flash overlay */
+    #flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Body shake via CSS class */
+    .shaking {
+      animation: bodyshake 0.05s linear infinite !important;
+    }
+    @keyframes bodyshake {
+      0%   { transform: translate(0,0); }
+      20%  { transform: translate(-8px, 6px); }
+      40%  { transform: translate(8px, -6px); }
+      60%  { transform: translate(-6px, -8px); }
+      80%  { transform: translate(6px, 8px); }
+      100% { transform: translate(0,0); }
     }
   </style>
 </head>
 <body>
 
-  <div id="unblock">
-    <button onclick="startAudio()"></button>
-  </div>
+  <div id="flash"></div>
 
-  <img src="kid.gif" alt="" />
+  <div id="main-circle" onclick="unleash()">
+    <img src="kid.gif" alt=""/>
+  </div>
 
   <audio id="audio" loop preload="auto">
     <source src="turndownforwhat.mp3" type="audio/mpeg"/>
@@ -62,18 +98,92 @@
 
   <script>
     const audio = document.getElementById('audio');
-    const unblock = document.getElementById('unblock');
+    const flash = document.getElementById('flash');
+    const body  = document.body;
+    let unleashed = false;
 
-    audio.volume = 1.0;
+    function unleash() {
+      if (unleashed) return;
+      unleashed = true;
 
-    audio.play().catch(() => {
-      unblock.classList.add('visible');
-    });
-
-    function startAudio() {
+      // Play audio at max volume
       audio.volume = 1.0;
       audio.play();
-      unblock.classList.remove('visible');
+
+      // Start screen shake
+      body.classList.add('shaking');
+
+      // Spawn clones constantly
+      spawnLoop();
+
+      // Flash loop
+      flashLoop();
+
+      // Vibrate on mobile
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 50, 200, 50, 200, 50, 500, 100, 200, 50, 200, 50, 200]);
+      }
+    }
+
+    function spawnClone() {
+      const el = document.createElement('div');
+      el.className = 'clone';
+
+      const size = 40 + Math.random() * 200;
+      const x = Math.random() * window.innerWidth;
+      const y = Math.random() * window.innerHeight;
+      const vx = (Math.random() - 0.5) * 20;
+      const vy = (Math.random() - 0.5) * 20;
+      const spin = (Math.random() - 0.5) * 720;
+      const duration = 600 + Math.random() * 800;
+
+      el.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}px;
+        top: ${y}px;
+      `;
+
+      const img = document.createElement('img');
+      img.src = 'kid.gif';
+      el.appendChild(img);
+      document.body.appendChild(el);
+
+      const start = performance.now();
+      function tick(now) {
+        const t = (now - start) / duration;
+        if (t >= 1) { el.remove(); return; }
+        const ease = 1 - t;
+        el.style.transform = `translate(${vx * t * 60}px, ${vy * t * 60}px) rotate(${spin * t}deg) scale(${1 - t * 0.5})`;
+        el.style.opacity = ease;
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function spawnLoop() {
+      // Spawn bursts
+      for (let i = 0; i < 12; i++) {
+        setTimeout(spawnClone, i * 30);
+      }
+      // Keep spawning
+      setInterval(() => {
+        const burst = 6 + Math.floor(Math.random() * 10);
+        for (let i = 0; i < burst; i++) {
+          setTimeout(spawnClone, i * 20);
+        }
+      }, 300);
+    }
+
+    function flashLoop() {
+      let opacity = 0;
+      let dir = 1;
+      setInterval(() => {
+        opacity += dir * (0.1 + Math.random() * 0.2);
+        if (opacity > 0.6) { opacity = 0.6; dir = -1; }
+        if (opacity < 0)   { opacity = 0;   dir = 1; }
+        flash.style.opacity = opacity;
+      }, 80);
     }
   </script>
 </body>
